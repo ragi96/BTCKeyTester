@@ -99,5 +99,3 @@ jobs:
           files: |
             ${{ env.ASSET_PATH }}
             ${{ env.CHECKSUM_PATH }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
