@@ -70,21 +70,18 @@ fn private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static str> {
 
 fn main() {
     let args = Cli::parse();
-    let hex_str = args.hex_key;
+    let hex_str = args.hex_key.replace("'", "");
     let pub_key = args.pub_key;
 
     let combinations = generate_combinations(&hex_str);
 
     let pb = indicatif::ProgressBar::new(combinations.len() as u64);
-    let length = combinations.len();
-    for (mut counter, c) in combinations.into_iter().enumerate() {
-        counter += 1;
+    for (counter, c) in combinations.into_iter().enumerate() {
+        pb.inc(1);
         let p2pkh = private_key_to_p2pkh(&c).unwrap();
         if p2pkh == pub_key {
             println!("Found private key: {c}");
             break;
         }
-        pb.println(format!("[+] finished #{counter} of {length}"));
-        pb.inc(1)
     }
 }
