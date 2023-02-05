@@ -70,7 +70,7 @@ fn private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static str> {
 
 fn main() {
     let args = Cli::parse();
-    let hex_str = args.hex_key.replace("'", "");
+    let hex_str = args.hex_key.replace('\'', "");
     let pub_key = args.pub_key;
 
     let combinations = generate_combinations(&hex_str);
