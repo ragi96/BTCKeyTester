@@ -109,4 +109,15 @@ mod tests {
         let combinations = generate_combinations("a*b*", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1", "a1b2", "a2b1", "a2b2"]);
     }
+
+    #[test]
+    fn combinations_three_star() {
+        let combinations = generate_combinations("a*b*c", &["1", "2"]);
+        assert_eq!(combinations, vec!["a1b1c", "a1b2c", "a2b1c", "a2b2c"]);
+    }
+
+    #[test]
+    fn private_key_to_p2pkh_error() {
+        assert!(matches!(private_key_to_p2pkh("c0ffee"), Err(_)));
+    }
 }
