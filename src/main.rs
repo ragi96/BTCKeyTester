@@ -87,7 +87,6 @@ fn private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static str> {
     Ok(p2pkh_address)
 }
 
-
 #[cfg(test)]
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
