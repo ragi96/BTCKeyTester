@@ -86,3 +86,28 @@ fn private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static str> {
         Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string();
     Ok(p2pkh_address)
 }
+
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_combinations_no_star() {
+        let combinations = generate_combinations("ab", &vec!["1", "2"]);
+        assert_eq!(combinations, vec!["ab"]);
+    }
+
+    #[test]
+    fn test_combinations_one_star() {
+        let combinations = generate_combinations("a*b", &vec!["1", "2"]);
+        assert_eq!(combinations, vec!["a1b", "a2b"]);
+    }
+
+    #[test]
+    fn test_combinations_two_star() {
+        let combinations = generate_combinations("a*b*", &vec!["1", "2"]);
+        assert_eq!(combinations, vec!["a1b1", "a1b2", "a2b1", "a2b2"]);
+    }
+}

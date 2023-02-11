@@ -34,6 +34,8 @@ jobs:
         with:
           command: clippy
           args: --all --all-targets --all-features -- -D warnings
+      - uses: actions-rs/tarpaulin@v0.1
+        name: cargo test and coverage
       - uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
