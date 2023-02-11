@@ -7,6 +7,7 @@ use clap::Parser;
 use hex::{decode, FromHex};
 use rayon::prelude::*;
 use std::error::Error;
+use std::time::Instant;
 
 #[derive(Parser)]
 struct Cli {
@@ -15,7 +16,6 @@ struct Cli {
 }
 
 fn main() {
-    use std::time::Instant;
     let now = Instant::now();
 
     let args = Cli::parse();
@@ -113,13 +113,11 @@ fn generate_combinations(hex_str: &str, chars: &[&str]) -> Vec<String> {
 
 fn hex_private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static str> {
     let secp = Secp256k1::new();
-    // Convert hexadecimal private key string to bytes
     let private_key_bytes = match hex::decode(private_key_hex) {
         Ok(bytes) => bytes,
         Err(_) => return Err("Invalid private key hexadecimal format"),
     };
 
-    // Create secret key from bytes
     let secret_key = match SecretKey::from_slice(&private_key_bytes) {
         Ok(key) => key,
         Err(_) => return Err("Invalid private key"),
@@ -137,7 +135,6 @@ fn base58_private_key_to_p2pkh(key: &str) -> Result<String, Box<dyn std::error::
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]
