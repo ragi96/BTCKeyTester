@@ -1,12 +1,13 @@
 #![allow(unused)]
 use bitcoin::network::constants::Network;
 use bitcoin::secp256k1::{Secp256k1, SecretKey};
-use bitcoin::util::{address::Address, base58, key::KeyPair};
+use bitcoin::util::{address::Address, base58};
 use bitcoin::PrivateKey;
 use clap::Parser;
 use hex::{decode, FromHex};
 use rayon::prelude::*;
 use std::error::Error;
+
 #[derive(Parser)]
 struct Cli {
     hex_key: String,
@@ -24,25 +25,18 @@ fn main() {
     let hex_chars = get_chars(base58);
     let combinations = generate_combinations(&hex_str, &hex_chars);
 
-    combinations
-        .into_par_iter()
-        .enumerate()
-        .for_each(|(index, c)| {
-            let mut p2pkh = "".to_string();
-            if (base58) {
-                let p2pkh_result = base58_private_key_to_p2pkh(&c);
-                if (p2pkh_result.is_err()) {
-                    return;
-                }
-                p2pkh = p2pkh_result.unwrap_or("Error converting to p2pkh".to_string());
-            } else {
-                p2pkh =
-                    hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
-            }
-            if p2pkh == pub_key {
-                println!("Found private key: {c}");
-            }
-        });
+    combinations.into_par_iter().for_each(|(c)| {
+        let mut p2pkh = "".to_string();
+        if (base58) {
+            p2pkh =
+                base58_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
+        } else {
+            p2pkh = hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
+        }
+        if p2pkh == pub_key {
+            println!("Found private key: {c}");
+        }
+    });
 
     let duration = now.elapsed();
     println!("Time elapsed to check all possible keys is: {duration:?}");
@@ -121,18 +115,14 @@ fn hex_private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static st
         Err(_) => return Err("Invalid private key"),
     };
 
-    let private_key = bitcoin::util::key::PrivateKey::new(secret_key, Network::Bitcoin);
-    let p2pkh_address =
-        Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string();
-    Ok(p2pkh_address)
+    let private_key = PrivateKey::new(secret_key, Network::Bitcoin);
+    Ok(Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string())
 }
 
 fn base58_private_key_to_p2pkh(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     let secp = Secp256k1::new();
     let private_key = PrivateKey::from_wif(key)?;
-    let p2pkh_address =
-        Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string();
-    Ok(p2pkh_address)
+    Ok(Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string())
 }
 
 #[cfg(test)]
