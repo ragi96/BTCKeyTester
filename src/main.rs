@@ -45,12 +45,12 @@ fn generate_combinations(hex_str: &str, chars: &[&str]) -> Vec<String> {
         chars: &[&str],
         combinations: &mut Vec<String>,
     ) {
-        if !hex_str.contains('*') {
+        if !hex_str.contains('_') {
             combinations.push(current + hex_str);
             return;
         }
 
-        let pos = hex_str.find('*').unwrap();
+        let pos = hex_str.find('_').unwrap();
         let (start, rest) = hex_str.split_at(pos);
 
         for hex_char in chars {
@@ -100,24 +100,35 @@ mod tests {
 
     #[test]
     fn test_combinations_one_star() {
-        let combinations = generate_combinations("a*b", &["1", "2"]);
+        let combinations = generate_combinations("a_b", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b", "a2b"]);
     }
 
     #[test]
     fn test_combinations_two_star() {
-        let combinations = generate_combinations("a*b*", &["1", "2"]);
+        let combinations = generate_combinations("a_b_", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1", "a1b2", "a2b1", "a2b2"]);
     }
 
     #[test]
     fn combinations_three_star() {
-        let combinations = generate_combinations("a*b*c", &["1", "2"]);
+        let combinations = generate_combinations("a_b_c", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1c", "a1b2c", "a2b1c", "a2b2c"]);
     }
 
     #[test]
-    fn private_key_to_p2pkh_error() {
+    fn private_key_to_p2pkh_error_invalid_format() {
         assert!(matches!(private_key_to_p2pkh("c0ffee"), Err(_)));
+    }
+
+    #[test]
+    fn private_key_to_p2pkh_error_invalid_key() {
+        assert!(matches!(private_key_to_p2pkh("dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"), Err(_)));
+    }
+
+    #[test]
+    fn private_key_to_p2pkh_success() {
+        let p2pkh = private_key_to_p2pkh("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1").unwrap();
+        assert_eq!("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ", p2pkh)
     }
 }
