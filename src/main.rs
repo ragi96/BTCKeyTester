@@ -5,6 +5,7 @@ use bitcoin::util::{address::Address, base58, key::KeyPair};
 use bitcoin::PrivateKey;
 use clap::Parser;
 use hex::{decode, FromHex};
+use rayon::prelude::*;
 use std::error::Error;
 #[derive(Parser)]
 struct Cli {
@@ -13,6 +14,9 @@ struct Cli {
 }
 
 fn main() {
+    use std::time::Instant;
+    let now = Instant::now();
+
     let args = Cli::parse();
     let hex_str = args.hex_key.replace('\'', "");
     let pub_key = args.pub_key.replace('\'', "");
@@ -20,24 +24,28 @@ fn main() {
     let hex_chars = get_chars(base58);
     let combinations = generate_combinations(&hex_str, &hex_chars);
 
-    let pb = indicatif::ProgressBar::new(combinations.len() as u64);
-    for (counter, c) in combinations.into_iter().enumerate() {
-        pb.inc(1);
-        let mut p2pkh = "".to_string();
-        if (base58) {
-            let p2pkh_result = base58_private_key_to_p2pkh(&c);
-            if (p2pkh_result.is_err()) {
-                continue;
+    combinations
+        .into_par_iter()
+        .enumerate()
+        .for_each(|(index, c)| {
+            let mut p2pkh = "".to_string();
+            if (base58) {
+                let p2pkh_result = base58_private_key_to_p2pkh(&c);
+                if (p2pkh_result.is_err()) {
+                    return;
+                }
+                p2pkh = p2pkh_result.unwrap_or("Error converting to p2pkh".to_string());
+            } else {
+                p2pkh =
+                    hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
             }
-            p2pkh = p2pkh_result.unwrap_or("Error converting to p2pkh".to_string());
-        } else {
-            p2pkh = hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
-        }
-        if p2pkh == pub_key {
-            println!("Found private key: {c}");
-            break;
-        }
-    }
+            if p2pkh == pub_key {
+                println!("Found private key: {c}");
+            }
+        });
+
+    let duration = now.elapsed();
+    println!("Time elapsed to check all possible keys is: {duration:?}");
 }
 
 fn is_base58(key: &str) -> Result<bool, Box<dyn Error>> {
