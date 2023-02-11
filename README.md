@@ -1,3 +1,5 @@
+[![Quality Gate Status](https://sonarqube.ragilab.science/api/project_badges/measure?project=ragi96_BTCKeyTester_AYYcWiGLfuhb9MxETE2T&metric=alert_status&token=sqb_bdcf67015e73bdb5bae6955d83a36a7d51ecb5c0)](https://sonarqube.ragilab.science/dashboard?id=ragi96_BTCKeyTester_AYYcWiGLfuhb9MxETE2T) [![Release](https://github.com/ragi96/BTCKeyTester/actions/workflows/release.yml/badge.svg)](https://github.com/ragi96/BTCKeyTester/actions/workflows/release.yml) [![Build](https://github.com/ragi96/BTCKeyTester/actions/workflows/build.yml/badge.svg)](https://github.com/ragi96/BTCKeyTester/actions/workflows/build.yml)
+
 # BTCKeyTester
 
 If you have written down the private key of your Bitcoin address in HEX or Base58 but can't read it completely, this is a potential solution.
