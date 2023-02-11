@@ -23,15 +23,15 @@ fn main() {
     let pb = indicatif::ProgressBar::new(combinations.len() as u64);
     for (counter, c) in combinations.into_iter().enumerate() {
         pb.inc(1);
-        let p2pkh: String;
+        let mut p2pkh = "".to_string();
         if (base58) {
             let p2pkh_result = base58_private_key_to_p2pkh(&c);
             if (p2pkh_result.is_err()) {
                 continue;
             }
-            p2pkh = p2pkh_result.unwrap();
+            p2pkh = p2pkh_result.unwrap_or("Error converting to p2pkh".to_string());
         } else {
-            p2pkh = hex_private_key_to_p2pkh(&c).unwrap();
+            p2pkh = hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
         }
         if p2pkh == pub_key {
             println!("Found private key: {c}");
@@ -240,8 +240,9 @@ mod tests {
     fn test_base58_private_key_to_p2pkh_with_private_key() {
         let private_key = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
         let expected_address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
-
-        let address = base58_private_key_to_p2pkh(private_key).unwrap();
-        assert_eq!(address.to_string(), expected_address);
+        assert_eq!(
+            base58_private_key_to_p2pkh(private_key).unwrap_or("".to_string()),
+            expected_address
+        );
     }
 }
