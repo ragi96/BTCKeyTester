@@ -123,12 +123,20 @@ mod tests {
 
     #[test]
     fn private_key_to_p2pkh_error_invalid_key() {
-        assert!(matches!(private_key_to_p2pkh("dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"), Err(_)));
+        assert!(matches!(
+            private_key_to_p2pkh(
+                "dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
+            ),
+            Err(_)
+        ));
     }
 
     #[test]
     fn private_key_to_p2pkh_success() {
-        let p2pkh = private_key_to_p2pkh("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1").unwrap();
+        let p2pkh = private_key_to_p2pkh(
+            "dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1",
+        )
+        .unwrap();
         assert_eq!("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ", p2pkh)
     }
 }
