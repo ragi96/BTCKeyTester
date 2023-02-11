@@ -23,8 +23,11 @@ fn main() {
     let pub_key = args.pub_key.replace('\'', "");
     let base58 = is_base58(&hex_str).unwrap();
     let hex_chars = get_chars(base58);
+    println!("Generating all possible combinations...");
     let combinations = generate_combinations(&hex_str, &hex_chars);
-
+    let len = combinations.len();
+    println!("Generated {len} combinations");
+    println!("Checking all possible combinations...");
     combinations
         .into_par_iter()
         .filter(|(c)| check_private_key(base58, c, &pub_key))
