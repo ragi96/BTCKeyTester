@@ -25,21 +25,31 @@ fn main() {
     let hex_chars = get_chars(base58);
     let combinations = generate_combinations(&hex_str, &hex_chars);
 
-    combinations.into_par_iter().for_each(|(c)| {
-        let mut p2pkh = "".to_string();
-        if (base58) {
-            p2pkh =
-                base58_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
-        } else {
-            p2pkh = hex_private_key_to_p2pkh(&c).unwrap_or("Error converting to p2pkh".to_string());
-        }
-        if p2pkh == pub_key {
-            println!("Found private key: {c}");
-        }
-    });
+    combinations
+        .into_par_iter()
+        .filter(|(c)| check_private_key(base58, c, &pub_key))
+        .find_first(|c| {
+            println!("Found Private key: {c}");
+            true
+        });
 
     let duration = now.elapsed();
-    println!("Time elapsed to check all possible keys is: {duration:?}");
+    println!("Time elapsed to check all possible keys till the key was found is: {duration:?}");
+}
+
+fn check_private_key(base58: bool, c: &str, pub_key: &str) -> bool {
+    let mut p2pkh = "".to_string();
+    let mut result = false;
+    if base58 {
+        p2pkh = base58_private_key_to_p2pkh(c).unwrap_or("Error converting to p2pkh".to_string());
+    } else {
+        p2pkh = hex_private_key_to_p2pkh(c).unwrap_or("Error converting to p2pkh".to_string());
+    }
+
+    if p2pkh == pub_key {
+        result = true;
+    }
+    result
 }
 
 fn is_base58(key: &str) -> Result<bool, Box<dyn Error>> {
@@ -129,29 +139,27 @@ fn base58_private_key_to_p2pkh(key: &str) -> Result<String, Box<dyn std::error::
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use std::process::Command;
-    use std::str;
 
     #[test]
-    fn test_combinations_no_star() {
+    fn combinations_no_underscore() {
         let combinations = generate_combinations("ab", &["1", "2"]);
         assert_eq!(combinations, vec!["ab"]);
     }
 
     #[test]
-    fn test_combinations_one_star() {
+    fn test_combinations_one_underscore() {
         let combinations = generate_combinations("a_b", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b", "a2b"]);
     }
 
     #[test]
-    fn test_combinations_two_star() {
+    fn test_combinations_two_underscore() {
         let combinations = generate_combinations("a_b_", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1", "a1b2", "a2b1", "a2b2"]);
     }
 
     #[test]
-    fn combinations_three_star() {
+    fn combinations_three_underscore() {
         let combinations = generate_combinations("a_b_c", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1c", "a1b2c", "a2b1c", "a2b2c"]);
     }
@@ -235,12 +243,61 @@ mod tests {
     }
 
     #[test]
-    fn test_base58_private_key_to_p2pkh_with_private_key() {
+    fn base58_private_key_to_p2pkh_with_private_key() {
         let private_key = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
         let expected_address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
         assert_eq!(
             base58_private_key_to_p2pkh(private_key).unwrap_or("".to_string()),
             expected_address
         );
+    }
+
+    #[test]
+    fn check_private_key_hex_key_with_address_returns_true() {
+        let private_key = "dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e0257e";
+        let expected_address = "12AbcUTdx39ykDUe4CxwAn65dZ2QSFDEpo";
+        let result = check_private_key(false, private_key, expected_address);
+        assert!(result);
+    }
+
+    #[test]
+    fn check_private_key_hex_key_with_wrong_address_returns_false() {
+        let private_key = "dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e0257e";
+        let expected_address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
+        let result = check_private_key(false, private_key, expected_address);
+        assert!(!result);
+    }
+
+    
+    #[test]
+    fn check_private_key_invalid_hex_key_with_address_returns_false() {
+        let private_key = "dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e0257ea";
+        let expected_address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
+        let result = check_private_key(false, private_key, expected_address);
+        assert!(!result);
+    }
+
+    #[test]
+    fn check_private_key_base58_key_with_address_returns_true() {
+        let private_key = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
+        let expected_address = "1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH";
+        let result = check_private_key(true, private_key, expected_address);
+        assert!(result);
+    }
+
+    #[test]
+    fn check_private_key_base58_key_with_address_returns_false() {
+        let private_key = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
+        let expected_address = "12AbcUTdx39ykDUe4CxwAn65dZ2QSFDEpo";
+        let result = check_private_key(true, private_key, expected_address);
+        assert!(!result);
+    }
+
+    #[test]
+    fn check_private_key_invalid_base58_key_with_address_returns_false() {
+        let private_key = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi33qYjgd9M7rFU73sVHnoWn";
+        let expected_address = "12AbcUTdx39ykDUe4CxwAn65dZ2QSFDEpo";
+        let result = check_private_key(true, private_key, expected_address);
+        assert!(!result);
     }
 }
