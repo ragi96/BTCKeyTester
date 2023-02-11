@@ -94,19 +94,19 @@ mod tests {
 
     #[test]
     fn test_combinations_no_star() {
-        let combinations = generate_combinations("ab", &vec!["1", "2"]);
+        let combinations = generate_combinations("ab", &["1", "2"]);
         assert_eq!(combinations, vec!["ab"]);
     }
 
     #[test]
     fn test_combinations_one_star() {
-        let combinations = generate_combinations("a*b", &vec!["1", "2"]);
+        let combinations = generate_combinations("a*b", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b", "a2b"]);
     }
 
     #[test]
     fn test_combinations_two_star() {
-        let combinations = generate_combinations("a*b*", &vec!["1", "2"]);
+        let combinations = generate_combinations("a*b*", &["1", "2"]);
         assert_eq!(combinations, vec!["a1b1", "a1b2", "a2b1", "a2b2"]);
     }
 }
