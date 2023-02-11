@@ -268,7 +268,6 @@ mod tests {
         assert!(!result);
     }
 
-    
     #[test]
     fn check_private_key_invalid_hex_key_with_address_returns_false() {
         let private_key = "dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e0257ea";
