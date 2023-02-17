@@ -36,6 +36,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clean
+      - name: cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
       - name: cargo test
         uses: actions-rs/cargo@v1
         with:
