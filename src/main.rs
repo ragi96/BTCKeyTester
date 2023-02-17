@@ -139,6 +139,59 @@ fn base58_private_key_to_p2pkh(key: &str) -> Result<String, Box<dyn std::error::
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_cmd::Command;
+
+    #[test]
+    fn check_cli_without_arguments_fails() {
+        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
+        cmd.assert().failure();
+    }
+
+    #[test]
+    fn check_cli_with_base58_arguments_just_one_combination_success() {
+        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
+        let output = cmd
+            .arg("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
+            .arg("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+            .unwrap();
+        assert!(String::from_utf8_lossy(&output.stdout)
+            .contains("Found Private key: KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"));
+    }
+
+    #[test]
+    fn check_cli_with_base58_arguments_multiple_combination_success() {
+        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
+        let output = cmd
+            .arg("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHno_n")
+            .arg("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+            .unwrap();
+        assert!(String::from_utf8_lossy(&output.stdout)
+            .contains("Found Private key: KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"));
+    }
+
+    #[test]
+    fn check_cli_with_hex_arguments_just_one_combination_success() {
+        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
+        let output = cmd
+            .arg("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1")
+            .arg("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ")
+            .unwrap();
+        assert!(String::from_utf8_lossy(&output.stdout).contains(
+            "Found Private key: dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
+        ));
+    }
+
+    #[test]
+    fn check_cli_with_hex_arguments_multiple_combination_success() {
+        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
+        let output = cmd
+            .arg("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e02_e1")
+            .arg("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ")
+            .unwrap();
+        assert!(String::from_utf8_lossy(&output.stdout).contains(
+            "Found Private key: dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
+        ));
+    }
 
     #[test]
     fn combinations_no_underscore() {
