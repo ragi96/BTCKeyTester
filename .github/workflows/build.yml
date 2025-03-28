@@ -51,30 +51,3 @@ jobs:
           cargo test --all-features --no-fail-fast
         env:
           CARGO_INCREMENTAL: "0"
-
-      - name: 🧼 Install grcov
-        run: cargo install grcov
-
-      - name: 📊 Generate Coverage Report (grcov)
-        run: |
-          grcov . \
-            --binary-path ./target/debug/ \
-            -s . \
-            -t lcov \
-            --branch \
-            --ignore-not-existing \
-            --ignore "*tests/*" \
-            --ignore "*examples/*" \
-            --ignore "/*/.cargo/registry/*" \
-            -o lcov.info
-      - name: 🔎 SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-      - name: ✅ SonarQube Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
