@@ -4,6 +4,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -64,14 +67,6 @@ jobs:
             --ignore "*examples/*" \
             --ignore "/*/.cargo/registry/*" \
             -o lcov.info
-
-      - name: ☁️ Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-
       - name: 🔎 SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
