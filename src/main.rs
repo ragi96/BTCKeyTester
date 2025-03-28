@@ -128,13 +128,13 @@ fn hex_private_key_to_p2pkh(private_key_hex: &str) -> Result<String, &'static st
     };
 
     let private_key = PrivateKey::new(secret_key, Network::Bitcoin);
-    Ok(Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string())
+    Ok(Address::p2pkh(private_key.public_key(&secp), Network::Bitcoin).to_string())
 }
 
 fn base58_private_key_to_p2pkh(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     let secp = Secp256k1::new();
     let private_key = PrivateKey::from_wif(key)?;
-    Ok(Address::p2pkh(&private_key.public_key(&secp), Network::Bitcoin).to_string())
+    Ok(Address::p2pkh(private_key.public_key(&secp), Network::Bitcoin).to_string())
 }
 
 #[cfg(test)]
@@ -220,17 +220,14 @@ mod tests {
 
     #[test]
     fn hex_private_key_to_p2pkh_error_invalid_format() {
-        assert!(matches!(hex_private_key_to_p2pkh("c0ffee"), Err(_)));
+        assert!(hex_private_key_to_p2pkh("c0ffee").is_err());
     }
 
     #[test]
     fn hex_private_key_to_p2pkh_error_invalid_key() {
-        assert!(matches!(
-            hex_private_key_to_p2pkh(
+        assert!(hex_private_key_to_p2pkh(
                 "dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
-            ),
-            Err(_)
-        ));
+            ).is_err());
     }
 
     #[test]
@@ -270,10 +267,7 @@ mod tests {
 
     #[test]
     fn is_base58_hex_key_with_underscore_error() {
-        assert!(matches!(
-            is_base58("dc7546c9cef4e980c563a4cb42efede82c40c0ee5fce55_4a7304f32747e029e1"),
-            Err(_)
-        ));
+        assert!(is_base58("dc7546c9cef4e980c563a4cb42efede82c40c0ee5fce55_4a7304f32747e029e1").is_err());
     }
 
     #[test]
@@ -290,10 +284,7 @@ mod tests {
 
     #[test]
     fn is_base58_base58_key_with_underscore_error() {
-        assert!(matches!(
-            is_base58("KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGf_f6YwgdGWZgawvrtJ"),
-            Err(_)
-        ));
+        assert!(is_base58("KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGf_f6YwgdGWZgawvrtJ").is_err());
     }
 
     #[test]
