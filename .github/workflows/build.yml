@@ -40,17 +40,30 @@ jobs:
           command: clippy
           args: --all --all-targets --all-features -- -D warnings
 
-      - name: 🛠️ Pre-Build Binary Target
+      - name: 🛠️ Build Binary Target
         run: cargo build --bin btc_keytester
 
-      - name: 🧪 Run Tests
-        run: cargo test --workspace --all-features --all-targets
+      - name: 🧪 Run Tests with Profiling
+        run: cargo test --all-features --no-fail-fast
+        env:
+          CARGO_INCREMENTAL: "0"
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Cpanic=abort"
 
-      - name: 🧰 Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+      - name: 🧼 Install grcov
+        run: cargo install grcov
 
-      - name: 📊 Run Code Coverage
-        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+      - name: 📊 Generate Coverage Report (grcov)
+        run: |
+          grcov . \
+            --binary-path ./target/debug/ \
+            -s . \
+            -t lcov \
+            --branch \
+            --ignore-not-existing \
+            --ignore "*tests/*" \
+            --ignore "*examples/*" \
+            -o lcov.info
 
       - name: ☁️ Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
