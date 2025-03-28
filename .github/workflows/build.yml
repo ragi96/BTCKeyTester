@@ -9,9 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
 
-      - name: ⚡ Cache
+      - name: ⚡ Cache Dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -20,51 +21,47 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: actions-rs/toolchain@v1
+      - name: 🧱 Set up Rust (nightly)
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
 
-      - name: rustfmt
+      - name: 🧹 rustfmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all --check
 
-      - name: clippy
+      - name: 🔍 clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --all --all-targets --all-features -- -D warnings
 
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+      - name: 🧪 Run Tests
+        run: cargo test --workspace --all-features --all-targets
 
-      - name: Install llvm-tools-preview
-        run: rustup component add llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
+      - name: 🧰 Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov
 
-      - name: Run tests with coverage
+      - name: 📊 Run Code Coverage
         run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
 
-      - name: Upload coverage to Codecov
+      - name: ☁️ Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: lcov.info
           fail_ci_if_error: true
 
-      - name: SonarQube Scan
+      - name: 🔎 SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      - name: SonarQube Quality Gate
+      - name: ✅ SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
