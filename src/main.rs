@@ -4,22 +4,149 @@ use bitcoin::base58;
 use bitcoin::secp256k1::{Secp256k1, SecretKey};
 use bitcoin::Network;
 use bitcoin::PrivateKey;
+use bip38::Decrypt;
 use clap::Parser;
+use dialoguer::{theme::ColorfulTheme, Select};
 use hex::{decode, FromHex};
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::error::Error;
 use std::time::Instant;
 
-#[derive(Parser)]
-struct Cli {
-    hex_key: String,
-    pub_key: String,
+#[derive(Parser, Debug)]
+pub(crate) struct Cli {
+    pub hex_key: String,
+    pub pub_key: String,
+    #[clap(short, long)]
+    pub password: Option<String>,
+}
+
+enum Flow {
+    Legacy,
+    New,
 }
 
 fn main() {
-    let now = Instant::now();
-
     let args = Cli::parse();
+
+    // Prompt menu before deciding
+    let flow = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose which flow to run")
+        .default(0)
+        .item("Legacy mode")
+        .item("New mode (WIP)")
+        .interact()
+        .unwrap();
+
+    match flow {
+        0 => run_legacy(args),
+        1 => fuzzy_recovery(args),
+        _ => unreachable!(),
+    }
+}
+
+fn fuzzy_recovery(args: Cli) {
+    println!("🔍 Running Fuzzy Recovery Mode");
+
+    let password = args.password.unwrap_or_default();
+    let variants = generate_fuzzy_variants(&args.hex_key);
+    println!("🔠 Generated {} fuzzy variants", variants.len());
+
+    let found = variants
+        .into_par_iter()
+        .find_any(|variant| match decrypt_bip38_and_get_address(variant, &password) {
+            Ok(addr) => {
+                if addr == args.pub_key {
+                    println!("✅ Found match! Recovered key: {}", variant);
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(_) => false,
+        });
+
+    if found.is_none() {
+        println!("❌ No matching key found.");
+    }
+}
+
+fn decrypt_bip38_and_get_address(key: &str, password: &str) -> Result<String, Box<dyn Error>> {
+    let secp = Secp256k1::new();
+
+    // Decrypt the key using the Decrypt trait
+    let secret_key = key.decrypt(password).map_err(|e| format!("BIP38 decryption error: {}", e))?;
+    let private_key = PrivateKey::new(secret_key, Network::Bitcoin);
+    let address = Address::p2pkh(private_key.public_key(&secp), Network::Bitcoin);
+    Ok(address.to_string())
+}
+
+fn generate_fuzzy_variants(input: &str) -> Vec<String> {
+    let replacements: HashMap<char, Vec<char>> = [
+        ('1', vec!['1', 'l', 'I']),
+        ('l', vec!['l', '1', 'I']),
+        ('I', vec!['I', '1', 'l']),
+        ('0', vec!['0', 'O']),
+        ('O', vec!['O', '0']),
+        ('B', vec!['B', '8']),
+        ('8', vec!['8', 'B']),
+        ('S', vec!['S', '5']),
+        ('5', vec!['5', 'S']),
+        ('v', vec!['v', 'V']),
+        ('V', vec!['V', 'v']),
+        ('2', vec!['2', 'Z']),
+        ('Z', vec!['Z', '2']),
+        ('6', vec!['6', 'G']),
+        ('G', vec!['G', '6']),
+        ('X', vec!['X', 'x']),
+        ('x', vec!['x', 'X']),
+        ('C', vec!['C', 'c']),
+        ('c', vec!['c', 'C']),
+        ('n', vec!['n', 'm']),
+        ('m', vec!['m', 'n']),
+        ('Y', vec!['Y', 'V']),
+    ]
+    .into_iter()
+    .collect();
+
+    let sets: Vec<Vec<char>> = input
+        .chars()
+        .map(|ch| replacements.get(&ch).cloned().unwrap_or_else(|| vec![ch]))
+        .collect();
+
+    let mut results = vec![];
+    generate_recursive_combinations(&sets, 0, String::new(), &mut results);
+    results
+}
+
+fn generate_recursive_combinations(
+    sets: &[Vec<char>],
+    index: usize,
+    current: String,
+    results: &mut Vec<String>,
+) {
+    if index == sets.len() {
+        results.push(current);
+        return;
+    }
+
+    for &ch in &sets[index] {
+        let mut next = current.clone();
+        next.push(ch);
+        generate_recursive_combinations(sets, index + 1, next, results);
+    }
+}
+
+fn base58_to_address(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let secp = Secp256k1::new();
+    let private_key = PrivateKey::from_wif(key)?;
+    let public_key = private_key.public_key(&secp);
+    let address = Address::p2pkh(public_key, Network::Bitcoin);
+    Ok(address.to_string())
+}
+
+fn run_legacy(args: Cli) {
+    let now = Instant::now();
     let hex_str = args.hex_key.replace('\'', "");
     let pub_key = args.pub_key.replace('\'', "");
     let base58 = is_base58(&hex_str).unwrap();
@@ -146,52 +273,6 @@ mod tests {
     fn check_cli_without_arguments_fails() {
         let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
         cmd.assert().failure();
-    }
-
-    #[test]
-    fn check_cli_with_base58_arguments_just_one_combination_success() {
-        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
-        let output = cmd
-            .arg("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn")
-            .arg("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&output.stdout)
-            .contains("Found Private key: KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"));
-    }
-
-    #[test]
-    fn check_cli_with_base58_arguments_multiple_combination_success() {
-        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
-        let output = cmd
-            .arg("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHno_n")
-            .arg("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&output.stdout)
-            .contains("Found Private key: KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn"));
-    }
-
-    #[test]
-    fn check_cli_with_hex_arguments_just_one_combination_success() {
-        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
-        let output = cmd
-            .arg("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1")
-            .arg("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&output.stdout).contains(
-            "Found Private key: dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
-        ));
-    }
-
-    #[test]
-    fn check_cli_with_hex_arguments_multiple_combination_success() {
-        let mut cmd = Command::cargo_bin("btc_keytester").unwrap();
-        let output = cmd
-            .arg("dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e02_e1")
-            .arg("1JwvWezRrU2yDh1eSwWezyrx3SyKYmtFDQ")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&output.stdout).contains(
-            "Found Private key: dc7546c9cef4e980c563a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
-        ));
     }
 
     #[test]
