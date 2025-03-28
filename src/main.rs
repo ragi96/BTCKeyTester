@@ -1,8 +1,8 @@
 #![allow(unused)]
-use bitcoin::Network;
-use bitcoin::secp256k1::{Secp256k1, SecretKey};
 use bitcoin::address::Address;
 use bitcoin::base58;
+use bitcoin::secp256k1::{Secp256k1, SecretKey};
+use bitcoin::Network;
 use bitcoin::PrivateKey;
 use clap::Parser;
 use hex::{decode, FromHex};
