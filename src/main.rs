@@ -226,8 +226,9 @@ mod tests {
     #[test]
     fn hex_private_key_to_p2pkh_error_invalid_key() {
         assert!(hex_private_key_to_p2pkh(
-                "dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
-            ).is_err());
+            "dc7546c9cef4e980cx63a4cb42efede82c40c0e5fce55c4a7304f32747e029e1"
+        )
+        .is_err());
     }
 
     #[test]
@@ -267,7 +268,9 @@ mod tests {
 
     #[test]
     fn is_base58_hex_key_with_underscore_error() {
-        assert!(is_base58("dc7546c9cef4e980c563a4cb42efede82c40c0ee5fce55_4a7304f32747e029e1").is_err());
+        assert!(
+            is_base58("dc7546c9cef4e980c563a4cb42efede82c40c0ee5fce55_4a7304f32747e029e1").is_err()
+        );
     }
 
     #[test]
