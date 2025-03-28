@@ -40,6 +40,9 @@ jobs:
           command: clippy
           args: --all --all-targets --all-features -- -D warnings
 
+      - name: 🛠️ Pre-Build Binary Target
+        run: cargo build --bin btc_keytester
+
       - name: 🧪 Run Tests
         run: cargo test --workspace --all-features --all-targets
 
